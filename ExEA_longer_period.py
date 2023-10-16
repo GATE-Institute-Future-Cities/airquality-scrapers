@@ -236,20 +236,68 @@ def ScrapeData():
                     os.remove(file_name_path) ## remove the csv file after reading it
                             
                             
-                # combine all CSV files 
+        # combine all CSV files 
         combined_df = pd.concat(all_files, axis=1)
-        
+        elemets_df = combined_df.columns[1:] ### all the elemets in the dataframe without the time
         all_files.clear()#clear the previous data in the list
 
 
-        # Import the combined_df into the PostgreSQL database
-        table_name = station  # Specify the name of the table in the database  I am getting station based on the loop above
-        
-        
-        combined_df.to_sql(table_name, engine, if_exists='replace', index=False) ## sending the data to the database to the specified table
+        query_stationid = 'SELECT stationid FROM airqualitystation WHERE stationname = %s' # this gets the station id for the currnet station
+        query_allsensorid = 'SELECT sensorid FROM stationsensor WHERE stationid = %s' # get all the sensors for the current station id
 
-        # Close the connection
-        connection.close()
+        cursor = connection.cursor()
+
+        cursor.execute(query_stationid, (station,)) ## get the stationid 
+        print(station)
+        staionid_result = cursor.fetchone()
+        stationid = staionid_result[0] ##  get the value only
+
+        cursor.execute(query_allsensorid, (stationid,))
+        all_sensorid_res = cursor.fetchall() #get all the sensor id that check with the parameter id in the sensors table
+        all_sensorid = tuple(sens[0] for sens in all_sensorid_res)
+
+
+
+        print(all_sensorid)
+        print(stationid)
+
+        # Reshape the DataFrame using melt to create separate rows for each element so we can get the time and the value at that time
+        melted_df = pd.melt(combined_df, id_vars=['Time'], value_vars=elemets_df, var_name='measuredparameterid', value_name='measuredvalue')
+        print(combined_df)
+        print(melted_df)
+        print(combined_df.columns)
+
+        # Iterate over the rows of the melted DataFrame to insert data into the table
+        for index, row in melted_df.iterrows():
+            measurementdatetime = row['Time'] ## Time
+            measuredparameter = row['measuredparameterid'] # current parameter
+            measuredvalue = row['measuredvalue'] # value at the current time for the specific element
+            stationid = stationid ## the iD of the station
+            
+            
+            query_paramid = 'SELECT id FROM parametertype WHERE parameterabbreviation = %s' # getting the param id
+            cursor.execute(query_paramid, (measuredparameter,))
+            paramid_res = cursor.fetchone()
+            measuredparameterid = paramid_res[0] ## parameter id 
+            
+             ## gtting the parameter id and checking it with the current paramid and checking the sensor in the all_sensors tuple to get the specific sensor id
+            query_sensorid = 'SELECT id FROM sensor WHERE parametername = %s AND id IN %s' 
+            cursor.execute(query_sensorid, (measuredparameterid, all_sensorid,))
+            sensorid_res = cursor.fetchone()
+            sensorid = sensorid_res[0] ## sensor id
+            
+            ##adding all the values row by row
+            insert_query = "INSERT INTO public.airqualityobserved (measurementdatetime, measuredparameterid, measuredvalue, stationid, sensorid) VALUES (%s, %s, %s, %s, %s)"
+            cursor.execute(insert_query, (measurementdatetime, measuredparameterid, measuredvalue, stationid, sensorid))
+            connection.commit()
+
+
+    #close cursor
+    cursor.close()
+    # Close the connection
+    connection.close()
+
+                
                 
         
 ScrapeData()
