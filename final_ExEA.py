@@ -72,7 +72,6 @@ def ScrapeData():
     for station in stations.keys():
         driver = webdriver.Chrome(PATH)
         driver.get(stations[station])
-        driver.minimize_window()
 
 
         #Set starting Date
