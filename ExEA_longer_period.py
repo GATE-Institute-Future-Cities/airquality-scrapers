@@ -55,11 +55,11 @@ def ScrapeData():
 
     # URL's of all stations
     stations = {
-           'pavlovo': 'https://eea.government.bg/kav/reports/air/qReport/10/01',
-           'mladost': 'https://eea.government.bg/kav/reports/air/qReport/102/01',
-           'druzhba': 'https://eea.government.bg/kav/reports/air/qReport/01/01',
-           'nadezhda': 'https://eea.government.bg/kav/reports/air/qReport/03/01',
-           'hipodruma':'https://eea.government.bg/kav/reports/air/qReport/04/01'
+           'AE1': 'https://eea.government.bg/kav/reports/air/qReport/10/01', #pavlovo
+           'AE2':'https://eea.government.bg/kav/reports/air/qReport/04/01', #hipodruma
+           'AE3': 'https://eea.government.bg/kav/reports/air/qReport/03/01', #nadezhda
+           'AE4': 'https://eea.government.bg/kav/reports/air/qReport/102/01', #mladost
+           'AE5': 'https://eea.government.bg/kav/reports/air/qReport/01/01', #druzhba
            }
     
     for station in stations.keys():
@@ -204,14 +204,14 @@ def ScrapeData():
 
                     colsNew = {
                                 'Дата/Час': 'Time', 'Фини прахови частици < 10um [PM10] ug/m3': 'PM10',
-                                'Фини прахови частици < 2.5um [PM2.5] ug/m3': 'PM2', 'Озон [O3] ug/m3': 'O3',
+                                'Фини прахови частици < 2.5um [PM2.5] ug/m3': 'PM2.5', 'Озон [O3] ug/m3': 'O3',
                                 'Азотен оксид [NO] ug/m3': 'NO', 'Азотен диоксид [NO2] ug/m3': 'NO2',
                                 'Серен диоксид [SO2] ug/m3': 'SO2', 'Въглероден оксид [CO] mg/m3': 'CO',
-                                'Бензен [Benzene] ug/m3': 'BENZENE', 'Температура [AirTemp] Celsius': 'TEMP',
-                                'Посока на вятъра [WD] degree': 'WINDDIR','Кардинална посока': 'DIRECTION',
-                                'Скорост на вятъра [WS] m/s': 'WINDSPD', 'Относителна влажност [UMR] %': 'HUMIDITY',
-                                'Атмосферно налягане [Press] mbar': 'PRESSURE', 'Слънчева радиация [GSR] W/m2': 'SOLRAD'
-                            }  # new names for the columns
+                                'Бензен [Benzene] ug/m3': 'C6H6', 'Температура [AirTemp] Celsius': 'T',
+                                'Посока на вятъра [WD] degree': 'WD','Кардинална посока': 'DIRECTION',
+                                'Скорост на вятъра [WS] m/s': 'WS', 'Относителна влажност [UMR] %': 'RH',
+                                'Атмосферно налягане [Press] mbar': 'p', 'Слънчева радиация [GSR] W/m2': 'SI'
+                    }   # new names for the columns
                             
                     df = df.replace(['С','И','З','Ю','СИ','СЗ','ЮИ','ЮЗ','ССИ','СИИ','ИЮИ','ЮЮИ','ЮЮЗ','ЗЮЗ','ЗСЗ','ССЗ'], #Cardinal directions
                         ['N','E','W','S','NE','NW','SE','SW','NNE','ENE','ESE','SSE','SSW','WSW','WNW','NNW'])
