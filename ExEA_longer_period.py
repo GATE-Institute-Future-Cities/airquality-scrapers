@@ -38,6 +38,7 @@ connection = psycopg2.connect(
     password='mohi1234'
 )
 
+
 # create SQLAlchemy engine
 engine = create_engine('postgresql+psycopg2://postgres:mohi1234@localhost/ExEA')
 
