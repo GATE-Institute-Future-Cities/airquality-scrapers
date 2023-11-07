@@ -3,11 +3,8 @@ from selenium.webdriver.support.select import Select
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import time
-import datetime as dt
 import pandas as pd
 import os
-from datetime import datetime, timedelta
 import psycopg2
 from sqlalchemy import create_engine
 
