@@ -47,7 +47,7 @@ all_files = []
 def ScrapeData():
 
     # ChromeDriver path
-    PATH = "C:\Program Files (x86)\chromedriver-win64\chromedriver.exe"
+    PATH = "C:\Program Files (x86)\chromedriver.exe"
     
     # Dates to set for the calendar
     today_date = dt.date.today()
@@ -55,18 +55,18 @@ def ScrapeData():
     yesterday = today_date - dt.timedelta(days=1)
 
     month = two_days_ago.month - 1
-    print(month)
+
     # Get the day numbers
     dayFrom = two_days_ago.day
     dayTo = yesterday.day
 
     # URL's of all stations
     stations = {
-           'pavlovo': 'https://eea.government.bg/kav/reports/air/qReport/10/01',
-           'mladost': 'https://eea.government.bg/kav/reports/air/qReport/102/01',
-           'druzhba': 'https://eea.government.bg/kav/reports/air/qReport/01/01',
-           'nadezhda': 'https://eea.government.bg/kav/reports/air/qReport/03/01',
-           'hipodruma':'https://eea.government.bg/kav/reports/air/qReport/04/01'
+           'AE1': 'https://eea.government.bg/kav/reports/air/qReport/10/01', #pavlovo
+           'AE2':'https://eea.government.bg/kav/reports/air/qReport/04/01', #hipodruma
+           'AE3': 'https://eea.government.bg/kav/reports/air/qReport/03/01', #nadezhda
+           'AE4': 'https://eea.government.bg/kav/reports/air/qReport/102/01', #mladost
+           'AE5': 'https://eea.government.bg/kav/reports/air/qReport/01/01', #druzhba
            }
     
     for station in stations.keys():
@@ -80,7 +80,6 @@ def ScrapeData():
 
         date1 = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.LINK_TEXT, f'{dayFrom}')))
         date1.click() # <- only select date as the month will already be set by default
-        time.sleep(2)
 
         calendar1.click() # closing the calendar
         
@@ -88,7 +87,6 @@ def ScrapeData():
         #Set Ending Date
         calendar2 = driver.find_element(By.CSS_SELECTOR, '.dateFields1 tr:nth-child(2) .ui-datepicker-trigger')
         calendar2.click()
-        time.sleep(2)
             
         # Adjust the month when its the begining of the month because by default it will take the current as the end date which has no data yet
         if today_date.day == 1 or today_date.day == 2:
@@ -96,7 +94,7 @@ def ScrapeData():
             month_scrollbar.click()
             select = Select(month_scrollbar)
             select.select_by_value(str(month))
-            time.sleep(2)
+            
             
         date2 = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.LINK_TEXT, f'{dayTo}')))
         date2.click()
@@ -120,46 +118,10 @@ def ScrapeData():
             exportBut.click() # Getting all the files for each button
             
             
-            driver.back() # Going back to the page to extract the following checkboxes's data
-            
-            time.sleep(2)# Wait for the page to load
-            
-            # Setting the dates once again because the calendar goes back to default input after using driver.back from another page
-            #Set starting Date
-            calendar1= driver.find_element(By.CSS_SELECTOR, '.dateFields1 tr:nth-child(1) .ui-datepicker-trigger')
-            calendar1.click() # open calendar
-
-            date1 = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.LINK_TEXT, f'{dayFrom}')))
-            date1.click() # <- only select date as the month will already be set by default
-            time.sleep(2)
-
-            calendar1.click() # closing the calendar
-            
-            
-            #Set Ending Date
-            calendar2 = driver.find_element(By.CSS_SELECTOR, '.dateFields1 tr:nth-child(2) .ui-datepicker-trigger')
-            calendar2.click()
-            time.sleep(2)
-            # Adjust the month when its the begining of the month because by default it will take the current as the end date which has no data yet
-            if today_date.day == 1 or today_date.day == 2 :
-                month_scrollbar = driver.find_element(By.CLASS_NAME, 'ui-datepicker-month')
-                month_scrollbar.click()
-                select = Select(month_scrollbar)
-                select.select_by_value(str(month))
-                time.sleep(2)
-
-            date2 = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.LINK_TEXT, f'{dayTo}')))
-            date2.click()
-            
-            calendar2.click() # closing the calendar
-            
-            checkboxes = driver.find_elements(By.CSS_SELECTOR, 'input[type="checkbox"]')#locate the checkbox elements again
-            checkbox = checkboxes[i] # Reassign the correct checkbox element
-            checkbox.click() #unchecking the checkbox that was alredy checked
-            
-
-                        
-        time.sleep(2)    
+            checkboxes = WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'input[type="checkbox"]'))) # Relocate checkboxes this is set to avoid the error stale element after the page changes and to be able to uncheck the current so that we move to next on its own
+            checkbox = checkboxes[i]  #get the check box button
+            checkbox.click() ## uncheck
+        
 
         # Close the browse
         driver.close()

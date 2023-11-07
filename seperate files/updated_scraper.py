@@ -3,8 +3,6 @@ from selenium.webdriver.support.select import Select
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.options import Options
-import time
 import datetime as dt
 
 
@@ -44,7 +42,6 @@ def ScrapeData():
 
         date1 = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.LINK_TEXT, f'{dayFrom}')))
         date1.click() # <- only select date as the month will already be set by default
-        time.sleep(2)
 
         calendar1.click() # closing the calendar
         
@@ -52,7 +49,6 @@ def ScrapeData():
         #Set Ending Date
         calendar2 = driver.find_element(By.CSS_SELECTOR, '.dateFields1 tr:nth-child(2) .ui-datepicker-trigger')
         calendar2.click()
-        time.sleep(2)
             
         # Adjust the month when its the begining of the month because by default it will take the current as the end date which has no data yet
         if today_date.day == 1 or today_date.day == 2:
@@ -60,7 +56,7 @@ def ScrapeData():
             month_scrollbar.click()
             select = Select(month_scrollbar)
             select.select_by_value(str(month))
-            time.sleep(2)
+            
             
         date2 = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.LINK_TEXT, f'{dayTo}')))
         date2.click()
@@ -82,6 +78,11 @@ def ScrapeData():
             # Downloading CSV Files
             exportBut = driver.find_element(By.ID, "exportb1") # Get export button
             exportBut.click() # Getting all the files for each button
+            
+            
+            checkboxes = WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'input[type="checkbox"]'))) # Relocate checkboxes this is set to avoid the error stale element after the page changes and to be able to uncheck the current so that we move to next on its own
+            checkbox = checkboxes[i]  #get the check box button
+            checkbox.click() ## uncheck
         
 
         # Close the browse
