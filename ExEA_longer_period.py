@@ -25,10 +25,6 @@ month_end = int(input(month_prompt)) - 1
 year_end = input('Please select the year: ')
 
 
-print(month_start)
-print(month_end)
-print(year_start)
-print(year_end)
 
 # establish a connection to PostgreSQL database
 connection = psycopg2.connect(
@@ -52,7 +48,7 @@ all_files = []
 
 def ScrapeData():
     
-    PATH = "C:\Program Files (x86)\chromedriver-win64\chromedriver.exe"
+    PATH = "C:\Program Files (x86)\chromedriver.exe"
 
     # URL's of all stations
     stations = {
@@ -76,17 +72,14 @@ def ScrapeData():
         month_scrollbar.click()
         select = Select(month_scrollbar)
         select.select_by_value(str(month_start))
-        time.sleep(2)
         
         year_scrollbar = driver.find_element(By.CLASS_NAME, 'ui-datepicker-year')## setting the year for the starting date
         year_scrollbar.click()
         select = Select(year_scrollbar)
         select.select_by_value(year_start)
-        time.sleep(2)
 
         date1 = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.LINK_TEXT, f'{day_start}')))
-        date1.click() # 
-        time.sleep(2)
+        date1.click() 
 
         calendar1.click() # closing the calendar
         
@@ -94,20 +87,17 @@ def ScrapeData():
         #Set Ending Date
         calendar2 = driver.find_element(By.CSS_SELECTOR, '.dateFields1 tr:nth-child(2) .ui-datepicker-trigger')
         calendar2.click()
-        time.sleep(2)
         
         
         month_scrollbar = driver.find_element(By.CLASS_NAME, 'ui-datepicker-month')
         month_scrollbar.click()
         select = Select(month_scrollbar)
         select.select_by_value(str(month_end))
-        time.sleep(2)
         
         year_scrollbar = driver.find_element(By.CLASS_NAME, 'ui-datepicker-year')## setting the year for the ending date
         year_scrollbar.click()
         select = Select(year_scrollbar)
         select.select_by_value(year_end)
-        time.sleep(2)
         
         date2 = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.LINK_TEXT, f'{day_end}')))
         date2.click()
@@ -131,65 +121,9 @@ def ScrapeData():
             exportBut = driver.find_element(By.ID, "exportb1") # Get export button
             exportBut.click() # Getting all the files for each button
             
-            
-            driver.back() # Going back to the page to extract the following checkboxes's data
-            
-            time.sleep(2)# Wait for the page to load
-            
-            # Setting the dates once again because the calendar goes back to default input after using driver.back from another page
-            #Set starting Date
-            calendar1= driver.find_element(By.CSS_SELECTOR, '.dateFields1 tr:nth-child(1) .ui-datepicker-trigger')
-            calendar1.click() # open calendar
-            
-            month_scrollbar = driver.find_element(By.CLASS_NAME, 'ui-datepicker-month')
-            month_scrollbar.click()
-            select = Select(month_scrollbar)
-            select.select_by_value(str(month_start))
-            time.sleep(2)
-            
-            year_scrollbar = driver.find_element(By.CLASS_NAME, 'ui-datepicker-year')## setting the year for the starting date
-            year_scrollbar.click()
-            select = Select(year_scrollbar)
-            select.select_by_value(year_start)
-            time.sleep(2)
-
-            date1 = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.LINK_TEXT, f'{day_start}')))
-            date1.click() # <- only select date as the month will already be set by default
-            time.sleep(2)
-
-            calendar1.click() # closing the calendar
-            
-            
-            #Set Ending Date
-            calendar2 = driver.find_element(By.CSS_SELECTOR, '.dateFields1 tr:nth-child(2) .ui-datepicker-trigger')
-            calendar2.click()
-            time.sleep(2)
-            # Adjust the month when its the begining of the month because by default it will take the current as the end date which has no data yet
-            
-            month_scrollbar = driver.find_element(By.CLASS_NAME, 'ui-datepicker-month')
-            month_scrollbar.click()
-            select = Select(month_scrollbar)
-            select.select_by_value(str(month_end))
-            time.sleep(2)
-            
-            year_scrollbar = driver.find_element(By.CLASS_NAME, 'ui-datepicker-year')## setting the year for the ending date
-            year_scrollbar.click()
-            select = Select(year_scrollbar)
-            select.select_by_value(year_end)
-            time.sleep(2)
-
-            date2 = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.LINK_TEXT, f'{day_end}')))
-            date2.click()
-            
-            calendar2.click() # closing the calendar
-            
-            checkboxes = driver.find_elements(By.CSS_SELECTOR, 'input[type="checkbox"]')#locate the checkbox elements again
-            checkbox = checkboxes[i] # Reassign the correct checkbox element
-            checkbox.click() #unchecking the checkbox that was alredy checked
-            
-
-                        
-        time.sleep(2)    
+            checkboxes = WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'input[type="checkbox"]'))) # Relocate checkboxes this is set to avoid the error stale element after the page changes and to be able to uncheck the current so that we move to next on its own
+            checkbox = checkboxes[i]  #get the check box button
+            checkbox.click() ## uncheck
 
         # Close the browse
         driver.close()
@@ -249,7 +183,6 @@ def ScrapeData():
         cursor = connection.cursor()
 
         cursor.execute(query_stationid, (station,)) ## get the stationid 
-        print(station)
         staionid_result = cursor.fetchone()
         stationid = staionid_result[0] ##  get the value only
 
@@ -257,16 +190,13 @@ def ScrapeData():
         all_sensorid_res = cursor.fetchall() #get all the sensor id that check with the parameter id in the sensors table
         all_sensorid = tuple(sens[0] for sens in all_sensorid_res)
 
-
-
-        print(all_sensorid)
-        print(stationid)
-
         # Reshape the DataFrame using melt to create separate rows for each element so we can get the time and the value at that time
         melted_df = pd.melt(combined_df, id_vars=['Time'], value_vars=elemets_df, var_name='measuredparameterid', value_name='measuredvalue')
-        print(combined_df)
-        print(melted_df)
-        print(combined_df.columns)
+
+
+        query_paramid = 'SELECT id FROM parametertype WHERE parameterabbreviation = %s' # getting the param id
+        query_sensorid = 'SELECT id FROM sensor WHERE parametername = %s AND id IN %s'   ## gtting the parameter id and checking it with the current paramid and checking the sensor in the all_sensors tuple to get the specific sensor id
+        insert_query = "INSERT INTO public.airqualityobserved (measurementdatetime, measuredparameterid, measuredvalue, stationid, sensorid) VALUES (%s, %s, %s, %s, %s)"
 
         # Iterate over the rows of the melted DataFrame to insert data into the table
         for index, row in melted_df.iterrows():
@@ -276,19 +206,16 @@ def ScrapeData():
             stationid = stationid ## the iD of the station
             
             
-            query_paramid = 'SELECT id FROM parametertype WHERE parameterabbreviation = %s' # getting the param id
+            
             cursor.execute(query_paramid, (measuredparameter,))
             paramid_res = cursor.fetchone()
             measuredparameterid = paramid_res[0] ## parameter id 
             
-             ## gtting the parameter id and checking it with the current paramid and checking the sensor in the all_sensors tuple to get the specific sensor id
-            query_sensorid = 'SELECT id FROM sensor WHERE parametername = %s AND id IN %s' 
             cursor.execute(query_sensorid, (measuredparameterid, all_sensorid,))
             sensorid_res = cursor.fetchone()
             sensorid = sensorid_res[0] ## sensor id
             
             ##adding all the values row by row
-            insert_query = "INSERT INTO public.airqualityobserved (measurementdatetime, measuredparameterid, measuredvalue, stationid, sensorid) VALUES (%s, %s, %s, %s, %s)"
             cursor.execute(insert_query, (measurementdatetime, measuredparameterid, measuredvalue, stationid, sensorid))
             connection.commit()
 
