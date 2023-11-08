@@ -109,4 +109,107 @@ def scrapeData(chdriverPath, stations, day_start, month_start, year_start, day_e
 
         # Close the browse
         driver.close()
-    
+        
+    return stations
+        
+
+## 1.the path of the downloaded files with the scraped data
+## 2. the extenstion of the file EX: '.csv' 
+def filterData(path, fileExtension):
+    all_files = []
+    ## extracting the data from the The path in our device
+    for root, dirs_list, files_list in os.walk(path):
+        for file_name in files_list:
+            if os.path.splitext(file_name)[-1] == fileExtension:
+                file_name_path = os.path.join(root, file_name)
+                print(file_name_path)  # this is the full path of the file
+                        
+                df = pd.read_csv(file_name_path, index_col=False)  # reading each csv file in the path and removing the index
+
+                colsNew = {
+                            'Дата/Час': 'Time', 'Фини прахови частици < 10um [PM10] ug/m3': 'PM10',
+                            'Фини прахови частици < 2.5um [PM2.5] ug/m3': 'PM2.5', 'Озон [O3] ug/m3': 'O3',
+                            'Азотен оксид [NO] ug/m3': 'NO', 'Азотен диоксид [NO2] ug/m3': 'NO2',
+                            'Серен диоксид [SO2] ug/m3': 'SO2', 'Въглероден оксид [CO] mg/m3': 'CO',
+                            'Бензен [Benzene] ug/m3': 'C6H6', 'Температура [AirTemp] Celsius': 'T',
+                            'Посока на вятъра [WD] degree': 'WD','Скорост на вятъра [WS] m/s': 'WS', 
+                            'Относителна влажност [UMR] %': 'RH','Атмосферно налягане [Press] mbar': 'p', 
+                            'Слънчева радиация [GSR] W/m2': 'SI',
+                }   # new names for the columns
+                        
+                        
+                # rename the columns with colsNew
+                df.rename(columns=colsNew, inplace=True)
+                        
+                unnamed_columns = f'Unnamed: {len(df.columns)-1}'
+                        
+                # delete last Unnamed column if any
+                if unnamed_columns in df.columns:
+                    df.drop(unnamed_columns, inplace=True, axis=1)
+                    
+                if 'Кардинална посока' in df.columns: ## uneeded column 
+                    df.drop('Кардинална посока', inplace=True, axis=1)
+                            
+
+                # drop the 'Time' column after adding it once to the csv
+                if 'Time' in df.columns:
+                    if not all_files:
+                        all_files.append(df)
+                    else:
+                        df = df.drop('Time', axis=1)
+                        all_files.append(df)
+                os.remove(file_name_path) ## remove the csv file after reading it
+                
+    return all_files
+
+
+def importData():
+        all_files = filterData('C:\\Users\\35987\\Downloads', '.csv')
+        connection = connectDB('localhost', 'ExEa_main', 'postgres', 'mohi1234')
+        
+        # combine all CSV files 
+        combined_df = pd.concat(all_files, axis=1)
+        elemets_df = combined_df.columns[1:] ### all the elemets in the dataframe without the time
+        all_files.clear()#clear the previous data in the list
+
+
+        query_stationid = 'SELECT stationid FROM airqualitystation WHERE stationname = %s' # this gets the station id for the currnet station
+        query_allsensorid = 'SELECT sensorid FROM stationsensor WHERE stationid = %s' # get all the sensors for the current station id
+
+        cursor = connection.cursor()
+
+        cursor.execute(query_stationid, ('AE1',)) ## get the stationid 
+        staionid_result = cursor.fetchone()
+        stationid = staionid_result[0] ##  get the value only
+
+        cursor.execute(query_allsensorid, (stationid,))
+        all_sensorid_res = cursor.fetchall() #get all the sensor id that check with the parameter id in the sensors table
+        all_sensorid = tuple(sens[0] for sens in all_sensorid_res)
+
+        # Reshape the DataFrame using melt to create separate rows for each element so we can get the time and the value at that time
+        melted_df = pd.melt(combined_df, id_vars=['Time'], value_vars=elemets_df, var_name='measuredparameterid', value_name='measuredvalue')
+
+
+        query_paramid = 'SELECT id FROM parametertype WHERE parameterabbreviation = %s' # getting the param id
+        query_sensorid = 'SELECT id FROM sensor WHERE parametername = %s AND id IN %s'   ## gtting the parameter id and checking it with the current paramid and checking the sensor in the all_sensors tuple to get the specific sensor id
+        insert_query = "INSERT INTO public.airqualityobserved (measurementdatetime, measuredparameterid, measuredvalue, stationid, sensorid) VALUES (%s, %s, %s, %s, %s)"
+
+        # Iterate over the rows of the melted DataFrame to insert data into the table
+        for index, row in melted_df.iterrows():
+            measurementdatetime = row['Time'] ## Time
+            measuredparameter = row['measuredparameterid'] # current parameter
+            measuredvalue = row['measuredvalue'] # value at the current time for the specific element
+            stationid = stationid ## the iD of the station
+            
+            
+            cursor.execute(query_paramid, (measuredparameter,))
+            paramid_res = cursor.fetchone()
+            measuredparameterid = paramid_res[0] ## parameter id 
+            
+            cursor.execute(query_sensorid, (measuredparameterid, all_sensorid,))
+            sensorid_res = cursor.fetchone()
+            sensorid = sensorid_res[0] ## sensor id
+            
+            ##adding all the values row by row
+            cursor.execute(insert_query, (measurementdatetime, measuredparameterid, measuredvalue, stationid, sensorid))
+            connection.commit()
