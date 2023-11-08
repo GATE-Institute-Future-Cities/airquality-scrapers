@@ -26,14 +26,14 @@ year_end = input('Please select the year: ')
 # establish a connection to PostgreSQL database
 connection = psycopg2.connect(
     host='localhost',
-    database='ExEA',
+    database='ExEa_main',
     user='postgres',
     password='mohi1234'
 )
 
 
 # create SQLAlchemy engine
-engine = create_engine('postgresql+psycopg2://postgres:mohi1234@localhost/ExEA')
+engine = create_engine('postgresql+psycopg2://postgres:mohi1234@localhost/ExEa_main')
 
 # this is the path where you want to search
 path = 'C:\\Users\\35987\\Downloads'
@@ -45,19 +45,15 @@ all_files = []
 
 def ScrapeData():
     
-    PATH = "C:\Program Files (x86)\chromedriver.exe"
+    PATH = "C:\\Program Files (x86)\\chromedriver.exe"
 
     # URL's of all stations
     stations = {
            'AE1': 'https://eea.government.bg/kav/reports/air/qReport/10/01', #pavlovo
-           'AE2':'https://eea.government.bg/kav/reports/air/qReport/04/01', #hipodruma
-           'AE3': 'https://eea.government.bg/kav/reports/air/qReport/03/01', #nadezhda
-           'AE4': 'https://eea.government.bg/kav/reports/air/qReport/102/01', #mladost
-           'AE5': 'https://eea.government.bg/kav/reports/air/qReport/01/01', #druzhba
            }
     
     for station in stations.keys():
-        driver = webdriver.Chrome(PATH)
+        driver = webdriver.Chrome()
         driver.get(stations[station])
 
 

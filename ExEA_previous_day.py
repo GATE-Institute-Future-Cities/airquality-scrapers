@@ -63,10 +63,6 @@ def ScrapeData():
     # URL's of all stations
     stations = {
            'AE1': 'https://eea.government.bg/kav/reports/air/qReport/10/01', #pavlovo
-           'AE2':'https://eea.government.bg/kav/reports/air/qReport/04/01', #hipodruma
-           'AE3': 'https://eea.government.bg/kav/reports/air/qReport/03/01', #nadezhda
-           'AE4': 'https://eea.government.bg/kav/reports/air/qReport/102/01', #mladost
-           'AE5': 'https://eea.government.bg/kav/reports/air/qReport/01/01', #druzhba
            }
     
     for station in stations.keys():
