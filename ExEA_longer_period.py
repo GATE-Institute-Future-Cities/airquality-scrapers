@@ -140,13 +140,11 @@ def ScrapeData():
                                 'Азотен оксид [NO] ug/m3': 'NO', 'Азотен диоксид [NO2] ug/m3': 'NO2',
                                 'Серен диоксид [SO2] ug/m3': 'SO2', 'Въглероден оксид [CO] mg/m3': 'CO',
                                 'Бензен [Benzene] ug/m3': 'C6H6', 'Температура [AirTemp] Celsius': 'T',
-                                'Посока на вятъра [WD] degree': 'WD','Кардинална посока': 'DIRECTION',
-                                'Скорост на вятъра [WS] m/s': 'WS', 'Относителна влажност [UMR] %': 'RH',
-                                'Атмосферно налягане [Press] mbar': 'p', 'Слънчева радиация [GSR] W/m2': 'SI'
+                                'Посока на вятъра [WD] degree': 'WD','Скорост на вятъра [WS] m/s': 'WS', 
+                                'Относителна влажност [UMR] %': 'RH','Атмосферно налягане [Press] mbar': 'p', 
+                                'Слънчева радиация [GSR] W/m2': 'SI',
                     }   # new names for the columns
                             
-                    df = df.replace(['С','И','З','Ю','СИ','СЗ','ЮИ','ЮЗ','ССИ','СИИ','ИЮИ','ЮЮИ','ЮЮЗ','ЗЮЗ','ЗСЗ','ССЗ'], #Cardinal directions
-                        ['N','E','W','S','NE','NW','SE','SW','NNE','ENE','ESE','SSE','SSW','WSW','WNW','NNW'])
                             
                     # rename the columns with colsNew
                     df.rename(columns=colsNew, inplace=True)
@@ -156,6 +154,9 @@ def ScrapeData():
                     # delete last Unnamed column if any
                     if unnamed_columns in df.columns:
                         df.drop(unnamed_columns, inplace=True, axis=1)
+                        
+                    if 'Кардинална посока' in df.columns:
+                        df.drop('Кардинална посока', inplace=True, axis=1)
                                 
 
                     # drop the 'Time' column after adding it once to the csv
@@ -201,7 +202,6 @@ def ScrapeData():
             measuredparameter = row['measuredparameterid'] # current parameter
             measuredvalue = row['measuredvalue'] # value at the current time for the specific element
             stationid = stationid ## the iD of the station
-            
             
             
             cursor.execute(query_paramid, (measuredparameter,))

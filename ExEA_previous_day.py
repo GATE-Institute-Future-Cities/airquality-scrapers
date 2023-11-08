@@ -20,8 +20,8 @@ dateTo = current_date - timedelta(days=1)
 yesterday_str = dateTo.strftime('%Y.%m.%d')
 
 # setting them so it can give me the data from 00:00 - 23:00 yesterday
-start_time = pd.to_datetime(f'{yesterday_str} 00:00')
-end_time = pd.to_datetime(f'{yesterday_str} 23:00')
+start_time = f'{yesterday_str} 00:00'
+end_time = f'{yesterday_str} 23:00'
 
 
 # establish a connection to PostgreSQL database
@@ -140,13 +140,11 @@ def ScrapeData():
                                 'Азотен оксид [NO] ug/m3': 'NO', 'Азотен диоксид [NO2] ug/m3': 'NO2',
                                 'Серен диоксид [SO2] ug/m3': 'SO2', 'Въглероден оксид [CO] mg/m3': 'CO',
                                 'Бензен [Benzene] ug/m3': 'C6H6', 'Температура [AirTemp] Celsius': 'T',
-                                'Посока на вятъра [WD] degree': 'WD','Кардинална посока': 'DIRECTION',
-                                'Скорост на вятъра [WS] m/s': 'WS', 'Относителна влажност [UMR] %': 'RH',
-                                'Атмосферно налягане [Press] mbar': 'p', 'Слънчева радиация [GSR] W/m2': 'SI'
-                            }  # new names for the columns
+                                'Посока на вятъра [WD] degree': 'WD','Скорост на вятъра [WS] m/s': 'WS', 
+                                'Относителна влажност [UMR] %': 'RH','Атмосферно налягане [Press] mbar': 'p', 
+                                'Слънчева радиация [GSR] W/m2': 'SI',
+                    }   # new names for the columns
                             
-                    df = df.replace(['С','И','З','Ю','СИ','СЗ','ЮИ','ЮЗ','ССИ','СИИ','ИЮИ','ЮЮИ','ЮЮЗ','ЗЮЗ','ЗСЗ','ССЗ'], #Cardinal directions
-                        ['N','E','W','S','NE','NW','SE','SW','NNE','ENE','ESE','SSE','SSW','WSW','WNW','NNW'])
                             
                     # rename the columns with colsNew
                     df.rename(columns=colsNew, inplace=True)
@@ -157,18 +155,18 @@ def ScrapeData():
                     if unnamed_columns in df.columns:
                         df.drop(unnamed_columns, inplace=True, axis=1)
                         
-                    if 'DIRECTION' in df.columns:
-                        df.drop('DIRECTION', inplace=True, axis=1)
-                                
+                    if 'Кардинална посока' in df.columns:
+                            df.drop('Кардинална посока', inplace=True, axis=1)
+                            
+                            
                     df['Time'] = df['Time'].str.replace('24:00', '00:00') ## replacing 24:00 with 00:00
                     df['Time'] = pd.to_datetime(df['Time'], format="%d.%m.%Y %H:%M")
 
                     # adjust the dates if the time is "00:00"
                     df.loc[df['Time'].dt.hour == 0, 'Time'] += pd.DateOffset(days=1) ##if the time is 00:00 it skipks to the next day because the day is set to the previous one
-
-                    # filter the DataFrame based on the specified date range
+                    
                     df = df[(df['Time'] >= start_time) & (df['Time'] <= end_time)] ## filter the times so its from 00:00 until 23:00 of the previous day
-                            
+            
                     # drop the 'Time' column after adding it once to the csv
                     if 'Time' in df.columns:
                         if not all_files:
@@ -176,31 +174,32 @@ def ScrapeData():
                         else:
                             df = df.drop('Time', axis=1)
                             all_files.append(df)
-                    os.remove(file_name_path) # removing the csv file after getting the data
                             
-                    
-        # combine all CSV files 
+                            
+                                            
+                # combine all CSV files 
         combined_df = pd.concat(all_files, axis=1)
-        elemets_df = combined_df.columns[1:] ### all the elemets in the dataframe without the time
-        all_files.clear()#clear the previous data in the list
+        elemets_df = combined_df.columns[1:] ### all the elemets in the dataframe
+        datetime_df = combined_df['Time'].tolist()
 
 
         query_stationid = 'SELECT stationid FROM airqualitystation WHERE stationname = %s' # this gets the station id for the currnet station
-        query_allsensorid = 'SELECT sensorid FROM stationsensor WHERE stationid = %s' # get all the sensors for the current station id
+        query_allsensorid = 'SELECT sensorid FROM stationsensor WHERE stationid = %s'
 
         cursor = connection.cursor()
 
         cursor.execute(query_stationid, (station,)) ## get the stationid 
         staionid_result = cursor.fetchone()
-        stationid = staionid_result[0] ##  get the value only
+        stationid = staionid_result[0]
 
         cursor.execute(query_allsensorid, (stationid,))
-        all_sensorid_res = cursor.fetchall() #get all the sensor id that check with the parameter id in the sensors table
+        all_sensorid_res = cursor.fetchall()#get all the sensor id that match with the station id 
         all_sensorid = tuple(sens[0] for sens in all_sensorid_res)
 
-        # Reshape the DataFrame using melt to create separate rows for each element so we can get the time and the value at that time
-        melted_df = pd.melt(combined_df, id_vars=['Time'], value_vars=elemets_df, var_name='measuredparameterid', value_name='measuredvalue')
 
+
+        # Reshape the DataFrame using melt to create separate rows for each element
+        melted_df = pd.melt(combined_df, id_vars=['Time'], value_vars=elemets_df, var_name='measuredparameterid', value_name='measuredvalue')
 
         query_paramid = 'SELECT id FROM parametertype WHERE parameterabbreviation = %s' # getting the param id
         query_sensorid = 'SELECT id FROM sensor WHERE parametername = %s AND id IN %s'   ## gtting the parameter id and checking it with the current paramid and checking the sensor in the all_sensors tuple to get the specific sensor id
@@ -212,7 +211,6 @@ def ScrapeData():
             measuredparameter = row['measuredparameterid'] # current parameter
             measuredvalue = row['measuredvalue'] # value at the current time for the specific element
             stationid = stationid ## the iD of the station
-            
             
             
             cursor.execute(query_paramid, (measuredparameter,))
@@ -228,10 +226,10 @@ def ScrapeData():
             connection.commit()
 
 
-    #close cursor
-    cursor.close()
-    # Close the connection
-    connection.close()
+        #close cursor
+        cursor.close()
+        # Close the connection
+        connection.close()
 
                 
         

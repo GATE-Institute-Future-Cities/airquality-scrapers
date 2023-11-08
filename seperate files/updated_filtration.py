@@ -13,8 +13,8 @@ dateTo = current_date - timedelta(days=1)
 yesterday_str = dateTo.strftime('%Y.%m.%d')
 
 # setting them so it can give me the data from 00:00 - 23:00 yesterday
-start_time = pd.to_datetime(f'{yesterday_str} 00:00')
-end_time = pd.to_datetime(f'{yesterday_str} 23:00')
+start_time = f'{yesterday_str} 00:00'
+end_time = f'{yesterday_str} 23:00'
 
 
 # establish a connection to PostgreSQL database
@@ -50,13 +50,11 @@ for root, dirs_list, files_list in os.walk(path):
                         'Азотен оксид [NO] ug/m3': 'NO', 'Азотен диоксид [NO2] ug/m3': 'NO2',
                         'Серен диоксид [SO2] ug/m3': 'SO2', 'Въглероден оксид [CO] mg/m3': 'CO',
                         'Бензен [Benzene] ug/m3': 'C6H6', 'Температура [AirTemp] Celsius': 'T',
-                        'Посока на вятъра [WD] degree': 'WD','Кардинална посока': 'DIRECTION',
-                        'Скорост на вятъра [WS] m/s': 'WS', 'Относителна влажност [UMR] %': 'RH',
-                        'Атмосферно налягане [Press] mbar': 'p', 'Слънчева радиация [GSR] W/m2': 'SI'
-                    }  # new names for the columns
+                        'Посока на вятъра [WD] degree': 'WD','Скорост на вятъра [WS] m/s': 'WS', 
+                        'Относителна влажност [UMR] %': 'RH','Атмосферно налягане [Press] mbar': 'p', 
+                        'Слънчева радиация [GSR] W/m2': 'SI',
+            }   # new names for the columns
                     
-            df = df.replace(['С','И','З','Ю','СИ','СЗ','ЮИ','ЮЗ','ССИ','СИИ','ИЮИ','ЮЮИ','ЮЮЗ','ЗЮЗ','ЗСЗ','ССЗ'], #Cardinal directions
-                ['N','E','W','S','NE','NW','SE','SW','NNE','ENE','ESE','SSE','SSW','WSW','WNW','NNW'])
                     
             # rename the columns with colsNew
             df.rename(columns=colsNew, inplace=True)
@@ -67,18 +65,18 @@ for root, dirs_list, files_list in os.walk(path):
             if unnamed_columns in df.columns:
                 df.drop(unnamed_columns, inplace=True, axis=1)
                 
-            if 'DIRECTION' in df.columns:
-                df.drop('DIRECTION', inplace=True, axis=1)
-                        
+            if 'Кардинална посока' in df.columns:
+                    df.drop('Кардинална посока', inplace=True, axis=1)
+                    
+                    
             df['Time'] = df['Time'].str.replace('24:00', '00:00') ## replacing 24:00 with 00:00
             df['Time'] = pd.to_datetime(df['Time'], format="%d.%m.%Y %H:%M")
 
             # adjust the dates if the time is "00:00"
             df.loc[df['Time'].dt.hour == 0, 'Time'] += pd.DateOffset(days=1) ##if the time is 00:00 it skipks to the next day because the day is set to the previous one
-
-            # filter the DataFrame based on the specified date range
+            
             df = df[(df['Time'] >= start_time) & (df['Time'] <= end_time)] ## filter the times so its from 00:00 until 23:00 of the previous day
-                    
+      
             # drop the 'Time' column after adding it once to the csv
             if 'Time' in df.columns:
                 if not all_files:
@@ -125,20 +123,18 @@ for index, row in melted_df.iterrows():
     measurementdatetime = row['Time'] ## Time
     measuredparameter = row['measuredparameterid'] # current parameter
     measuredvalue = row['measuredvalue'] # value at the current time for the specific element
-    stationid = stationid ## the is of the station
+    stationid = stationid ## the is of the station    
     
     
     query_paramid = 'SELECT id FROM parametertype WHERE parameterabbreviation = %s'
     cursor.execute(query_paramid, (measuredparameter,))
     paramid_res = cursor.fetchone()
     measuredparameterid = paramid_res[0] ## parameter id 
-    print(measuredparameterid)
-    
+
     query_sensorid = 'SELECT id FROM sensor WHERE parametername = %s AND id IN %s'
     cursor.execute(query_sensorid, (measuredparameterid, all_sensorid,))
     sensorid_res = cursor.fetchone()
     sensorid = sensorid_res[0] ## sensor id
-    print(sensorid)
     
     
     insert_query = "INSERT INTO public.airqualityobserved (measurementdatetime, measuredparameterid, measuredvalue, stationid, sensorid) VALUES (%s, %s, %s, %s, %s)"
