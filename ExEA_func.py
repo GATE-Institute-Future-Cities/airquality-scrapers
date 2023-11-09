@@ -11,8 +11,7 @@ from sqlalchemy import create_engine
 
 
 
-def connectDB(hostN, db, username, passWord):
-    
+def connectDB(hostN, db, username, passWord):    
     try:
         
         # establish a connection to PostgreSQL database
@@ -37,7 +36,9 @@ def connectDB(hostN, db, username, passWord):
     
     
 
-## 1.ChromedriverPath  2. a dict with stationnames as keys and url to the website as values  3...  the period of the data you want
+## 1.ChromedriverPath  
+# 2. a dict with stationnames as keys and url to the website as values  
+# 3...  the period of the data you want
 def scrapeData(chdriverPath, stations, day_start, month_start, year_start, day_end, month_end, year_end):
 
     
@@ -170,6 +171,8 @@ def importData():
         # combine all CSV files 
         combined_df = pd.concat(all_files, axis=1)
         elemets_df = combined_df.columns[1:] ### all the elemets in the dataframe without the time
+        # Reshape the DataFrame using melt to create separate rows for each element so we can get the time and the value at that time
+        melted_df = pd.melt(combined_df, id_vars=['Time'], value_vars=elemets_df, var_name='measuredparameterid', value_name='measuredvalue')
         all_files.clear()#clear the previous data in the list
 
 
@@ -186,8 +189,6 @@ def importData():
         all_sensorid_res = cursor.fetchall() #get all the sensor id that check with the parameter id in the sensors table
         all_sensorid = tuple(sens[0] for sens in all_sensorid_res)
 
-        # Reshape the DataFrame using melt to create separate rows for each element so we can get the time and the value at that time
-        melted_df = pd.melt(combined_df, id_vars=['Time'], value_vars=elemets_df, var_name='measuredparameterid', value_name='measuredvalue')
 
 
         query_paramid = 'SELECT id FROM parametertype WHERE parameterabbreviation = %s' # getting the param id

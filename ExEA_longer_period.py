@@ -7,6 +7,7 @@ import pandas as pd
 import os
 import psycopg2
 from sqlalchemy import create_engine
+from datetime import datetime
 
 
 
@@ -30,10 +31,6 @@ connection = psycopg2.connect(
     user='postgres',
     password='mohi1234'
 )
-
-
-# create SQLAlchemy engine
-engine = create_engine('postgresql+psycopg2://postgres:mohi1234@localhost/ExEa_main')
 
 # this is the path where you want to search
 path = 'C:\\Users\\35987\\Downloads'
@@ -198,7 +195,7 @@ def ScrapeData():
 
         # Iterate over the rows of the melted DataFrame to insert data into the table
         for index, row in melted_df.iterrows():
-            measurementdatetime = row['Time'] ## Time
+            measurementdatetime = datetime.strptime(row['Time'], "%d.%m.%Y %H:%M") ## Time
             measuredparameter = row['measuredparameterid'] # current parameter
             measuredvalue = row['measuredvalue'] # value at the current time for the specific element
             stationid = stationid ## the iD of the station

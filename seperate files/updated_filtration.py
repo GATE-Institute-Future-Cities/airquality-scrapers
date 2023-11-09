@@ -3,18 +3,8 @@ import os
 from datetime import datetime, timedelta
 import psycopg2
 from sqlalchemy import create_engine
+from datetime import datetime
 
-
-# get current date
-current_date = datetime.now().date()
-
-# calculate the date of yesterday
-dateTo = current_date - timedelta(days=1)
-yesterday_str = dateTo.strftime('%Y.%m.%d')
-
-# setting them so it can give me the data from 00:00 - 23:00 yesterday
-start_time = f'{yesterday_str} 00:00'
-end_time = f'{yesterday_str} 23:00'
 
 
 # establish a connection to PostgreSQL database
@@ -24,9 +14,6 @@ connection = psycopg2.connect(
     user='postgres',
     password='mohi1234'
 )
-
-# create SQLAlchemy engine
-engine = create_engine('postgresql+psycopg2://postgres:mohi1234@localhost/ExEa_main')
 
 # this is the path where you want to search
 path = 'C:\\Users\\35987\\Downloads'
@@ -66,16 +53,10 @@ for root, dirs_list, files_list in os.walk(path):
                 df.drop(unnamed_columns, inplace=True, axis=1)
                 
             if 'Кардинална посока' in df.columns:
-                    df.drop('Кардинална посока', inplace=True, axis=1)
+                    df.drop('Кардинална посока', inplace=True, axis=1)                    
                     
                     
-            df['Time'] = df['Time'].str.replace('24:00', '00:00') ## replacing 24:00 with 00:00
-            df['Time'] = pd.to_datetime(df['Time'], format="%d.%m.%Y %H:%M")
-
-            # adjust the dates if the time is "00:00"
-            df.loc[df['Time'].dt.hour == 0, 'Time'] += pd.DateOffset(days=1) ##if the time is 00:00 it skipks to the next day because the day is set to the previous one
-            
-            df = df[(df['Time'] >= start_time) & (df['Time'] <= end_time)] ## filter the times so its from 00:00 until 23:00 of the previous day
+            df['Time'] = df['Time'].str.replace('24:00', '00:00') ## replacing 24:00 with 00:00           
       
             # drop the 'Time' column after adding it once to the csv
             if 'Time' in df.columns:
@@ -120,11 +101,12 @@ print(combined_df.columns)
 
 # Iterate over the rows of the melted DataFrame to insert data into the PostgreSQL table
 for index, row in melted_df.iterrows():
-    measurementdatetime = row['Time'] ## Time
+    measurementdatetime = datetime.strptime(row['Time'], "%d.%m.%Y %H:%M") ## Time
     measuredparameter = row['measuredparameterid'] # current parameter
     measuredvalue = row['measuredvalue'] # value at the current time for the specific element
     stationid = stationid ## the is of the station    
-    
+    print(type(measurementdatetime))
+    print(measurementdatetime)
     
     query_paramid = 'SELECT id FROM parametertype WHERE parameterabbreviation = %s'
     cursor.execute(query_paramid, (measuredparameter,))
