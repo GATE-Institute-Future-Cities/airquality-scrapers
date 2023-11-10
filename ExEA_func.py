@@ -6,8 +6,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import pandas as pd
 import os
 import psycopg2
-from sqlalchemy import create_engine
-
+from datetime import datetime
 
 
 
@@ -199,7 +198,7 @@ def importData(melted_df, staionName , connection):
 
         # Iterate over the rows of the melted DataFrame to insert data into the table
         for index, row in melted_df.iterrows():
-            measurementdatetime = row['Time'] ## Time
+            measurementdatetime = datetime.strptime(row['Time'], "%d.%m.%Y %H:%M") ## Time
             measuredparameter = row['measuredparameterid'] # current parameter
             measuredvalue = row['measuredvalue'] # value at the current time for the specific element
             stationid = stationid ## the iD of the station
@@ -219,7 +218,7 @@ def importData(melted_df, staionName , connection):
 
 
 # Example usage
-stationDict = {## change the stations or add the stations you want to scrape but insert then one by one 
+stationDict = {## change the stations or add the stations you want to scrape
     'AE1': 'https://eea.government.bg/kav/reports/air/qReport/10/01', #pavlovo
 }
 
@@ -229,10 +228,10 @@ for station, url in stationDict.items():
 
     driver = webdriver.Chrome(PATH)## if you have 4.0 and above version of selenium you don't need chrome driver path
     
-    try:
+    try:                                    #start         #end
         scrapeData(driver, {station: url}, "9-11-2023", "10-11-2023")
         melted_df = readFilteredData('C:\\Users\\35987\\Downloads', '.csv') ## path where to search and extension of the files we want
-        connection = connectDB('localhost', 'ExEa_main', 'postgres', 'mohi1234')
+        connection = connectDB('localhost', 'ExEa_main', 'postgres', 'mohi1234') ### db data
         importData(melted_df, station, connection)
         
     finally: 
