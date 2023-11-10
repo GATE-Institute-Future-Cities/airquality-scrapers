@@ -40,6 +40,12 @@ def scrapeData(driver, stationurl, start_date_str, end_date_str):
     day_start, month_start, year_start = map(int, start_date_str.split('-'))
     day_end, month_end, year_end = map(int, end_date_str.split('-'))
     
+    
+    print(day_start)
+    print(month_start)
+    print(year_start)
+    
+
     print(day_start)
     print(month_start)
     print(year_start)
@@ -55,12 +61,12 @@ def scrapeData(driver, stationurl, start_date_str, end_date_str):
         month_scrollbar = driver.find_element(By.CLASS_NAME, 'ui-datepicker-month') ## setting the month for the starting date
         month_scrollbar.click()
         select = Select(month_scrollbar)
-        select.select_by_value(str(month_start))
+        select.select_by_value(str(month_start - 1 )) ## removing one because the value of the month starts from 0 - 11 / Jan-Dec
         
         year_scrollbar = driver.find_element(By.CLASS_NAME, 'ui-datepicker-year')## setting the year for the starting date
         year_scrollbar.click()
         select = Select(year_scrollbar)
-        select.select_by_value(year_start)
+        select.select_by_value(str(year_start))
 
         date1 = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.LINK_TEXT, f'{day_start}')))
         date1.click() 
@@ -76,12 +82,12 @@ def scrapeData(driver, stationurl, start_date_str, end_date_str):
         month_scrollbar = driver.find_element(By.CLASS_NAME, 'ui-datepicker-month')
         month_scrollbar.click()
         select = Select(month_scrollbar)
-        select.select_by_value(str(month_end))
+        select.select_by_value(str(month_end - 1)) ## removing one because the value of the month starts from 0 - 11 / Jan-Dec
         
         year_scrollbar = driver.find_element(By.CLASS_NAME, 'ui-datepicker-year')## setting the year for the ending date
         year_scrollbar.click()
         select = Select(year_scrollbar)
-        select.select_by_value(year_end)
+        select.select_by_value(str(year_end))
         
         date2 = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.LINK_TEXT, f'{day_end}')))
         date2.click()
@@ -227,7 +233,7 @@ for station, url in stationDict.items():
         scrapeData(driver, {station: url}, "9-11-2023", "10-11-2023")
         melted_df = readFilteredData('C:\\Users\\35987\\Downloads', '.csv') ## path where to search and extension of the files we want
         connection = connectDB('localhost', 'ExEa_main', 'postgres', 'mohi1234')
-        importData(connection, melted_df, station)
+        importData(melted_df, station, connection)
         
     finally: 
         driver.quit()
