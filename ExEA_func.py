@@ -21,12 +21,8 @@ def connectDB(hostN, db, username, passWord):
             user=username,
             password=passWord
         )
-
-        # create SQLAlchemy engine
-        create_engine(f'postgresql+psycopg2://{username}:{passWord}@{hostN}/{db}')
         
         print('Database successfully connected')
-        print('Engine successfully created')
         
         return connection
     
@@ -37,14 +33,19 @@ def connectDB(hostN, db, username, passWord):
     
 
 ## 1.ChromedriverPath  
-# 2. a dict with stationnames as keys and url to the website as values  
-# 3...  the period of the data you want
-def scrapeData(chdriverPath, stations, day_start, month_start, year_start, day_end, month_end, year_end):
+# 2. a dict with stationname as keys and url to the website as value 
+# 3...  the period of the data you want in this format "day-month-year"
+def scrapeData(driver, stationurl, start_date_str, end_date_str):
 
+    day_start, month_start, year_start = map(int, start_date_str.split('-'))
+    day_end, month_end, year_end = map(int, end_date_str.split('-'))
     
-    for station in stations.keys():
-        driver = webdriver.Chrome(chdriverPath)
-        driver.get(stations[station])
+    print(day_start)
+    print(month_start)
+    print(year_start)
+    
+    for station in stationurl.keys():
+        driver.get(stationurl[station])
 
 
         #Set starting Date
@@ -111,12 +112,10 @@ def scrapeData(chdriverPath, stations, day_start, month_start, year_start, day_e
         # Close the browse
         driver.close()
         
-    return stations
-        
 
 ## 1.the path of the downloaded files with the scraped data
 ## 2. the extenstion of the file EX: '.csv' 
-def filterData(path, fileExtension):
+def readFilteredData(path, fileExtension):
     all_files = []
     ## extracting the data from the The path in our device
     for root, dirs_list, files_list in os.walk(path):
@@ -161,27 +160,24 @@ def filterData(path, fileExtension):
                         all_files.append(df)
                 os.remove(file_name_path) ## remove the csv file after reading it
                 
-    return all_files
-
-
-def importData():
-        all_files = filterData('C:\\Users\\35987\\Downloads', '.csv')
-        connection = connectDB('localhost', 'ExEa_main', 'postgres', 'mohi1234')
-        
         # combine all CSV files 
-        combined_df = pd.concat(all_files, axis=1)
-        elemets_df = combined_df.columns[1:] ### all the elemets in the dataframe without the time
-        # Reshape the DataFrame using melt to create separate rows for each element so we can get the time and the value at that time
-        melted_df = pd.melt(combined_df, id_vars=['Time'], value_vars=elemets_df, var_name='measuredparameterid', value_name='measuredvalue')
-        all_files.clear()#clear the previous data in the list
+    combined_df = pd.concat(all_files, axis=1)
+    elemets_df = combined_df.columns[1:] ### all the elemets in the dataframe without the time
+    # Reshape the DataFrame using melt to create separate rows for each element so we can get the time and the value at that time
+    melted_df = pd.melt(combined_df, id_vars=['Time'], value_vars=elemets_df, var_name='measuredparameterid', value_name='measuredvalue')
+    all_files.clear()#clear the previous data in the list
+    
+    return melted_df
 
 
+def importData(melted_df, staionName , connection):
+    
         query_stationid = 'SELECT stationid FROM airqualitystation WHERE stationname = %s' # this gets the station id for the currnet station
         query_allsensorid = 'SELECT sensorid FROM stationsensor WHERE stationid = %s' # get all the sensors for the current station id
 
         cursor = connection.cursor()
 
-        cursor.execute(query_stationid, ('AE1',)) ## get the stationid 
+        cursor.execute(query_stationid, (staionName,)) ## get the stationid 
         staionid_result = cursor.fetchone()
         stationid = staionid_result[0] ##  get the value only
 
@@ -214,3 +210,26 @@ def importData():
             ##adding all the values row by row
             cursor.execute(insert_query, (measurementdatetime, measuredparameterid, measuredvalue, stationid, sensorid))
             connection.commit()
+
+
+# Example usage
+stationDict = {## change the stations or add the stations you want to scrape but insert then one by one 
+    'AE1': 'https://eea.government.bg/kav/reports/air/qReport/10/01', #pavlovo
+}
+
+PATH = "C:\\Program Files (x86)\\chromedriver.exe" 
+
+for station, url in stationDict.items():
+
+    driver = webdriver.Chrome(PATH)## if you have 4.0 and above version of selenium you don't need chrome driver path
+    
+    try:
+        scrapeData(driver, {station: url}, "9-11-2023", "10-11-2023")
+        melted_df = readFilteredData('C:\\Users\\35987\\Downloads', '.csv') ## path where to search and extension of the files we want
+        connection = connectDB('localhost', 'ExEa_main', 'postgres', 'mohi1234')
+        importData(connection, melted_df, station)
+        
+    finally: 
+        driver.quit()
+        if connection:
+            connection.close()
