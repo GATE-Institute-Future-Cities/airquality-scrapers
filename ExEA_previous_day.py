@@ -10,7 +10,7 @@ import os
 from datetime import datetime, timedelta
 import psycopg2
 from sqlalchemy import create_engine
-
+from config import db_config
 
 # get current date
 current_date = datetime.now().date()
@@ -25,15 +25,8 @@ end_time = f'{yesterday_str} 23:00'
 
 
 # establish a connection to PostgreSQL database
-connection = psycopg2.connect(
-    host='localhost',
-    database='ExEa_main',
-    user='postgres',
-    password='mohi1234'
-)
+connection = psycopg2.connect(**db_config)
 
-# create SQLAlchemy engine
-engine = create_engine('postgresql+psycopg2://postgres:mohi1234@localhost/ExEa_main')
 
 # this is the path where you want to search
 path = 'C:\\Users\\35987\\Downloads'

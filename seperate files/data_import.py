@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import psycopg2
+from config import db_config
 from datetime import datetime, timedelta
 
 
@@ -16,19 +17,8 @@ yesterday_str = dateTo.strftime('%Y.%m.%d')
 start_time = pd.to_datetime(f'{yesterday_str} 00:00')
 end_time = pd.to_datetime(f'{yesterday_str} 23:00')
 
-# PostgreSQL database credentials
-db_host = "localhost"
-db_name = "ExEA"
-db_user = "postgres"
-db_password = "mohi1234"
-
 # establish a connection to PostgreSQL database
-connection = psycopg2.connect(
-    host=db_host,
-    database=db_name,
-    user=db_user,
-    password=db_password
-)
+connection = psycopg2.connect(**db_config)
 
 cursor = connection.cursor()
 

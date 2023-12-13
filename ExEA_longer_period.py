@@ -8,7 +8,7 @@ import os
 import psycopg2
 from sqlalchemy import create_engine
 from datetime import datetime
-
+from config import db_config
 
 
 month_prompt = 'Please select the month: '
@@ -25,12 +25,7 @@ year_end = input('Please select the year: ')
 
 
 # establish a connection to PostgreSQL database
-connection = psycopg2.connect(
-    host='localhost',
-    database='ExEa_main',
-    user='postgres',
-    password='mohi1234'
-)
+connection = psycopg2.connect(**db_config)
 
 # this is the path where you want to search
 path = 'C:\\Users\\35987\\Downloads'

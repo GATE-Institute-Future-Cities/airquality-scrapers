@@ -7,7 +7,7 @@ import pandas as pd
 import os
 import psycopg2
 from datetime import datetime
-
+from config import db_config
 
 
 def connectDB(hostN, db, username, passWord):    
@@ -231,7 +231,7 @@ for station, url in stationDict.items():
     try:                                    #start         #end
         scrapeData(driver, {station: url}, "9-11-2023", "10-11-2023")
         melted_df = readFilteredData('C:\\Users\\35987\\Downloads', '.csv') ## path where to search and extension of the files we want
-        connection = connectDB('localhost', 'ExEa_main', 'postgres', 'mohi1234') ### db data
+        connection = connectDB(**db_config) ### db data
         importData(melted_df, station, connection)
         
     finally: 
