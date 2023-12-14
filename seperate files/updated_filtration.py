@@ -2,7 +2,6 @@ import pandas as pd
 import os
 from datetime import datetime, timedelta
 import psycopg2
-from sqlalchemy import create_engine
 from datetime import datetime
 from config import db_config
 
@@ -101,8 +100,6 @@ for index, row in melted_df.iterrows():
     measuredparameter = row['measuredparameterid'] # current parameter
     measuredvalue = row['measuredvalue'] # value at the current time for the specific element
     stationid = stationid ## the is of the station    
-    print(type(measurementdatetime))
-    print(measurementdatetime)
     
     query_paramid = 'SELECT id FROM parametertype WHERE parameterabbreviation = %s'
     cursor.execute(query_paramid, (measuredparameter,))
