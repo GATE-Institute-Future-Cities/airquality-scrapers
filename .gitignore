@@ -1,4 +1,4 @@
 config.py
 Pipfile.lock
-./.vscode/
+./.vscode/*
 __pycache__/*
